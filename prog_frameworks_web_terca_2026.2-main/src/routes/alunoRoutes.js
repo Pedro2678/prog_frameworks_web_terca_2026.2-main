@@ -2,6 +2,7 @@ const express = require("express");
 const alunoController = require("../controllers/AlunoController");
 const validarAluno = require("../middlewares/validarAluno");
 
+
 const router = express.Router();
 
 router.get("/",(request, response, next)=>{
@@ -9,5 +10,6 @@ router.get("/",(request, response, next)=>{
     next();
 }, alunoController.findMany);
 router.post("/", validarAluno, alunoController.create);
+router.get("/:id", alunoController.findById);
 
 module.exports = router;
