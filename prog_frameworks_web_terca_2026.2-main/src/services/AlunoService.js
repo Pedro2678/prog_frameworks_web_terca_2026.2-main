@@ -1,6 +1,8 @@
 const prisma = require("../databases/prisma");
 const AlunoInvalidoError = require("../errors/AlunoInvalidoError");
 const AlunoNaoEncontradoError = require("../errors/AlunoNaoEncontradoError");
+const alunoSchema = require("../schemas/alunoSchema");
+
 
 class AlunoService{
 
@@ -62,6 +64,67 @@ class AlunoService{
     }
 
     return aluno;
+}
+async update(id, dados){
+    const aluno = await prisma.aluno.findUnique({
+        where: {
+            id: Number(id)
+        }
+    });
+
+    if(!aluno){
+        throw new AlunoNaoEncontradoError();
+    }
+
+    if(!dados || Object.keys(dados).length === 0){
+        throw new AlunoInvalidoError(
+            "Informe pelo menos nome ou email para atualizar"
+        );
+    }
+
+    const dadosValidos = {};
+
+    if(dados.nome !== undefined){
+        dadosValidos.nome = dados.nome;
+    }
+
+    if(dados.email !== undefined){
+        dadosValidos.email = dados.email;
+    }
+
+    if(Object.keys(dadosValidos).length === 0){
+        throw new AlunoInvalidoError(
+            "Informe pelo menos nome ou email para atualizar"
+        );
+    }
+
+    const validacao = alunoSchema.partial().safeParse(dadosValidos);
+
+    if(!validacao.success){
+        throw new AlunoInvalidoError(
+            validacao.error.issues[0].message
+        );
+    }
+
+    try{
+        const alunoAtualizado = await prisma.aluno.update({
+            where: {
+                id: Number(id)
+            },
+            data: dadosValidos
+        });
+
+        return alunoAtualizado;
+
+    }catch(e){
+        if(e.code === "P2002"){
+            throw new AlunoInvalidoError(
+                "E-mail já está cadastrado"
+            );
+        }
+
+        throw e;
+    }
 }
 }
 
